@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>청년 주택 안전진단 · 금융연계 플랫폼 (프로토타입)</title>
+
+<!-- Leaflet (오픈소스 지도) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Chart.js (도표) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+  :root{
+    --bg:#eef1f6; --surface:#ffffff; --surface-2:#f6f8fb;
+    --ink:#1a2230; --ink-2:#5a667a; --muted:#8b98ac; --line:#e2e7ef;
+    --brand:#2563eb; --brand-ink:#1e3a8a;
+    /* 위험등급 = 상태색 (항상 라벨과 함께 사용) */
+    --g-safe:#16a34a; --g-warn:#ca8a04; --g-alert:#ea580c; --g-danger:#dc2626;
+    --radius:14px; --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0d1017; --surface:#161b24; --surface-2:#1c2430;
+      --ink:#e7ecf3; --ink-2:#a3afc0; --muted:#6b7889; --line:#28313f;
+      --brand:#5b8cff; --brand-ink:#9db8ff;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35); }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;}
+  header{padding:18px 24px;background:var(--surface);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  header h1{font-size:17px;margin:0;letter-spacing:-.01em;}
+  header .tag{font-size:11px;color:var(--brand-ink);background:color-mix(in srgb,var(--brand) 14%,transparent);
+    padding:3px 9px;border-radius:999px;font-weight:600;}
+  header .sub{font-size:12px;color:var(--muted);margin-left:auto;}
+  .wrap{padding:16px 24px;display:grid;gap:16px;max-width:1500px;margin:0 auto;}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 16px;box-shadow:var(--shadow);}
+  .kpi .lbl{font-size:11.5px;color:var(--ink-2);letter-spacing:.02em;}
+  .kpi .val{font-size:26px;font-weight:700;margin-top:4px;letter-spacing:-.02em;}
+  .kpi .val small{font-size:13px;font-weight:500;color:var(--muted);}
+
+  .main{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;}
+  @media (max-width:960px){ .main{grid-template-columns:1fr;} }
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;}
+  .card h2{font-size:13px;margin:0;padding:13px 16px;border-bottom:1px solid var(--line);
+    color:var(--ink-2);font-weight:600;letter-spacing:.01em;display:flex;gap:8px;align-items:center;}
+  #map{height:560px;width:100%;}
+  @media (max-width:960px){ #map{height:420px;} }
+
+  .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 16px;
+    border-bottom:1px solid var(--line);background:var(--surface-2);}
+  .filters label{font-size:11.5px;color:var(--ink-2);}
+  select,.chip{font:inherit;font-size:12.5px;padding:6px 10px;border:1px solid var(--line);
+    border-radius:9px;background:var(--surface);color:var(--ink);cursor:pointer;}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin-left:auto;font-size:12px;align-items:center;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;color:var(--ink-2);}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block;}
+
+  /* 상세 패널 */
+  .detail{padding:16px;display:grid;gap:12px;}
+  .detail .addr{font-size:16px;font-weight:700;letter-spacing:-.01em;}
+  .detail .meta{font-size:12px;color:var(--muted);}
+  .gauge{display:flex;align-items:center;gap:14px;}
+  .gauge .ring{position:relative;width:96px;height:96px;flex:none;}
+  .gauge .ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:22px;font-weight:800;}
+  .grade-pill{font-size:12px;font-weight:700;padding:4px 11px;border-radius:999px;color:#fff;}
+  .rows{display:grid;gap:8px;}
+  .row{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px dashed var(--line);}
+  .row span:first-child{color:var(--ink-2);}
+  .row b{font-weight:650;}
+  .prod{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface-2);}
+  .prod .ptag{font-size:11px;font-weight:700;color:var(--brand-ink);
+    background:color-mix(in srgb,var(--brand) 14%,transparent);padding:2px 8px;border-radius:999px;}
+  .prod .pname{font-size:14px;font-weight:700;margin:8px 0 4px;}
+  .prod .pdesc{font-size:12.5px;color:var(--ink-2);line-height:1.5;}
+  .prod .prate{font-size:13px;margin-top:8px;}
+  .prod .prate b{color:var(--brand-ink);font-size:15px;}
+  .empty{color:var(--muted);font-size:13px;text-align:center;padding:40px 0;}
+
+  .charts{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:16px;}
+  @media (max-width:1100px){ .charts{grid-template-columns:1fr;} }
+  .chart-body{padding:14px 16px;height:280px;position:relative;}
+  .note{font-size:11px;color:var(--muted);padding:0 24px 10px;line-height:1.6;}
+  a{color:var(--brand);}
+</style>
+</head>
+<body>
+<header>
+  <h1>청년·대학생 주택 안전진단 <span style="color:var(--muted);font-weight:400">·</span> 맞춤형 금융연계</h1>
+  <span class="tag">Prototype</span>
+  <span class="sub">데이터: 서울시 실거래가(공공) · 건축물대장(공공) · 등기부(제휴) — 무단 크롤링 배제</span>
+</header>
+
+<div class="wrap">
+  <!-- KPI -->
+  <section class="kpis" id="kpis"></section>
+
+  <!-- 지도 + 상세 -->
+  <section class="main">
+    <div class="card">
+      <div class="filters">
+        <label>자치구
+          <select id="fDistrict"><option value="">전체</option></select>
+        </label>
+        <label>위험등급
+          <select id="fGrade">
+            <option value="">전체</option>
+            <option value="안전">안전</option><option value="주의">주의</option>
+            <option value="경고">경고</option><option value="위험">위험</option>
+          </select>
+        </label>
+        <div class="legend">
+          <span><i class="dot" style="background:var(--g-safe)"></i>안전</span>
+          <span><i class="dot" style="background:var(--g-warn)"></i>주의</span>
+          <span><i class="dot" style="background:var(--g-alert)"></i>경고</span>
+          <span><i class="dot" style="background:var(--g-danger)"></i>위험</span>
+          <span style="color:var(--muted)">· 원 크기 = 매매 시세</span>
+        </div>
+      </div>
+      <div id="map"></div>
+    </div>
+
+    <div class="card">
+      <h2>🔎 매물 상세 진단 &amp; 추천 금융상품</h2>
+      <div class="detail" id="detail">
+        <div class="empty">지도에서 매물(원)을 클릭하면<br/>위험도 진단과 추천 금융상품이 표시됩니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 도표 -->
+  <section class="charts">
+    <div class="card">
+      <h2>위험등급 분포</h2>
+      <div class="chart-body"><canvas id="cGrade"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>자치구별 평균 위험도 (상위 12)</h2>
+      <div class="chart-body"><canvas id="cDistrict"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>전세가율 × 위험도 (매물 산포)</h2>
+      <div class="chart-body"><canvas id="cScatter"></canvas></div>
+    </div>
+  </section>
+  <p class="note">
+    ※ 자치구 평균 매매가·전세가는 <code>SEOUL_API_KEY</code> 설정 시 서울 열린데이터광장 실거래가로 갱신되며, 개별 매물 수치는 그 평균을 기반으로 생성한 <b>샘플</b>입니다.
+    위험도(0~100)는 <code>선순위채권비율=(근저당+보증금)/매매가</code>, 전세가율, 위반건축물 여부를 결합해 산출합니다.
+    추천 금융상품은 KB국민은행 실제 상품(청년 맞춤형 전세자금대출·버팀목·KB스타 HUG연계)을 위험등급·보증금 규모로 매칭합니다.
+    근저당·위반건축물 등 개별 매물 정보는 등기부·건축물대장·공인중개사 제휴 연동 후 실데이터로 대체됩니다.
+  </p>
+</div>
+
+<script>
+const GRADE_COLORS = {안전:'#16a34a', 주의:'#ca8a04', 경고:'#ea580c', 위험:'#dc2626'};
+const fmt = n => (n/10000).toFixed(1);  // 만원 → 억
+const won = n => n.toLocaleString('ko-KR');
+
+let DATA = null, map, layer, charts = {};
+
+async function load(){
+  // 1순위: 백엔드 API, 2순위: 정적 data.json (file:// 로 열었을 때)
+  try{
+    const [p,d,s] = await Promise.all([
+      fetch('/api/properties').then(r=>r.json()),
+      fetch('/api/districts').then(r=>r.json()),
+      fetch('/api/stats').then(r=>r.json()),
+    ]);
+    DATA = {properties:p, districts:d, stats:s};
+  }catch(e){
+    const j = await fetch('data.json').then(r=>r.json());
+    DATA = j;
+  }
+  initKpis(); initFilters(); initMap(); render(); initCharts();
+}
+
+function initKpis(){
+  const s = DATA.stats, g = s.grade_distribution;
+  const risky = (g['경고']||0)+(g['위험']||0);
+  const el = document.getElementById('kpis');
+  const items = [
+    ['진단 매물', `${s.total}<small>건</small>`],
+    ['평균 위험도', `${s.avg_risk}<small>/100</small>`],
+    ['고위험(경고+위험)', `${risky}<small>건</small>`],
+    ['안전 매물', `${g['안전']||0}<small>건</small>`],
+    ['분석 자치구', `${DATA.districts.length}<small>개구</small>`],
+  ];
+  el.innerHTML = items.map(([l,v])=>`<div class="kpi"><div class="lbl">${l}</div><div class="val">${v}</div></div>`).join('');
+}
+
+function initFilters(){
+  const sel = document.getElementById('fDistrict');
+  [...new Set(DATA.properties.map(p=>p.district_name))].sort().forEach(n=>{
+    sel.insertAdjacentHTML('beforeend',`<option>${n}</option>`);
+  });
+  sel.onchange = render; document.getElementById('fGrade').onchange = render;
+}
+
+function filtered(){
+  const d = document.getElementById('fDistrict').value;
+  const g = document.getElementById('fGrade').value;
+  return DATA.properties.filter(p=>(!d||p.district_name===d)&&(!g||p.risk_grade===g));
+}
+
+function initMap(){
+  map = L.map('map',{zoomControl:true}).setView([37.556,126.99],11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+    attribution:'© OpenStreetMap © CARTO', maxZoom:19, subdomains:'abcd'
+  }).addTo(map);
+  layer = L.layerGroup().addTo(map);
+}
+
+function render(){
+  const rows = filtered();
+  layer.clearLayers();
+  rows.forEach(p=>{
+    const r = 5 + Math.sqrt(p.sale_price)/22;   // 시세 → 반경
+    const m = L.circleMarker([p.lat,p.lng],{
+      radius:r, color:'#fff', weight:1, fillColor:GRADE_COLORS[p.risk_grade],
+      fillOpacity:.82
+    }).addTo(layer);
+    m.on('click',()=>showDetail(p.property_id));
+    m.bindTooltip(`${p.address} · 위험도 ${p.risk_score}`,{direction:'top'});
+  });
+}
+
+function buildRateTxt(prod, adjust){
+  if(prod.rate_min==null || prod.rate_max==null){
+    return `<span style="color:var(--muted)">${prod.rate_asof||'금리 정보 없음'}</span>`;
+  }
+  const lo=(prod.rate_min+adjust).toFixed(2), hi=(prod.rate_max+adjust).toFixed(2);
+  let txt = `연 <b>${lo}% ~ ${hi}%</b>`;
+  if(adjust){
+    txt += ` <span style="color:var(--muted)">(공시 ${prod.rate_min}%~${prod.rate_max}%, 제안 우대 ${adjust.toFixed(1)}%p 적용)</span>`;
+  } else {
+    txt += ` <span style="color:var(--muted)">(${prod.rate_asof||'공시금리'})</span>`;
+  }
+  return txt;
+}
+
+async function showDetail(pid){
+  let p;
+  try{ p = await fetch('/api/properties/'+pid).then(r=>r.json()); }
+  catch(e){ p = DATA.properties.find(x=>x.property_id===pid); }
+  const el = document.getElementById('detail');
+  const c = GRADE_COLORS[p.risk_grade];
+  const deg = p.risk_score*3.6;
+  const prod = p.product_detail;
+  const adjust = p.proposal_rate_adjust || 0;
+  el.innerHTML = `
+    <div class="addr">${p.address}</div>
+    <div class="meta">${p.building_type||''} · 시세 ${fmt(p.sale_price)}억 · 보증금 ${fmt(p.deposit)}억${p.is_illegal?' · ⚠️ 위반건축물':''}</div>
+    <div class="gauge">
+      <div class="ring" style="background:conic-gradient(${c} ${deg}deg, var(--line) 0)">
+        <div style="position:absolute;inset:9px;background:var(--surface);border-radius:50%"></div>
+        <b style="color:${c}">${p.risk_score}</b>
+      </div>
+      <div>
+        <span class="grade-pill" style="background:${c}">${p.risk_grade}</span>
+        <div class="rows" style="margin-top:10px">
+          <div class="row"><span>전세가율</span><b>${(p.jeonse_ratio*100).toFixed(0)}%</b></div>
+          <div class="row"><span>선순위채권비율</span><b style="color:${p.senior_debt_ratio>1?'var(--g-danger)':'inherit'}">${(p.senior_debt_ratio*100).toFixed(0)}%</b></div>
+          <div class="row"><span>근저당 설정액</span><b>${fmt(p.mortgage_amount)}억</b></div>
+        </div>
+      </div>
+    </div>
+    ${prod?`<div class="prod">
+      <span class="ptag">${prod.provider} · ${prod.product_type}</span>
+      <div class="pname">${prod.name}</div>
+      <div class="pdesc">${prod.description}</div>
+      <div class="prate">${buildRateTxt(prod, adjust)}</div>
+      <div class="rows" style="margin-top:8px">
+        ${prod.guarantee_agency?`<div class="row"><span>보증기관</span><b>${prod.guarantee_agency}</b></div>`:''}
+        ${prod.max_loan_manwon?`<div class="row"><span>최대한도</span><b>${fmt(prod.max_loan_manwon)}억</b></div>`:''}
+      </div>
+      <div class="pdesc" style="margin-top:8px;font-style:italic">매칭 근거: ${p.match_reason||''}</div>
+      ${prod.reference_url?`<div style="margin-top:8px"><a href="${prod.reference_url}" target="_blank" rel="noopener" style="font-size:12px">${prod.name} 안내 페이지로 이동 ↗</a></div>`:''}
+    </div>`:''}`;
+}
+
+function chartText(){ return getComputedStyle(document.body).getPropertyValue('--ink-2').trim(); }
+function chartGrid(){ return getComputedStyle(document.body).getPropertyValue('--line').trim(); }
+
+function initCharts(){
+  Chart.defaults.color = chartText();
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  const g = DATA.stats.grade_distribution;
+  const order=['안전','주의','경고','위험'];
+
+  // 도넛: 위험등급 분포
+  charts.grade = new Chart(document.getElementById('cGrade'),{
+    type:'doughnut',
+    data:{labels:order,datasets:[{data:order.map(k=>g[k]||0),
+      backgroundColor:order.map(k=>GRADE_COLORS[k]),borderColor:getComputedStyle(document.body).getPropertyValue('--surface'),borderWidth:2}]},
+    options:{cutout:'62%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:14}}}}
+  });
+
+  // 바: 자치구별 평균 위험도
+  const dd = [...DATA.districts].sort((a,b)=>b.avg_risk-a.avg_risk).slice(0,12);
+  charts.district = new Chart(document.getElementById('cDistrict'),{
+    type:'bar',
+    data:{labels:dd.map(d=>d.name),datasets:[{data:dd.map(d=>d.avg_risk),
+      backgroundColor:dd.map(d=>gradeColorFromScore(d.avg_risk)),borderRadius:4,barThickness:'flex'}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:chartGrid()},min:0,max:100,title:{display:true,text:'평균 위험도'}},
+              y:{grid:{display:false}}}}
+  });
+
+  // 산포: 전세가율 × 위험도
+  charts.scatter = new Chart(document.getElementById('cScatter'),{
+    type:'scatter',
+    data:{datasets:order.map(gr=>({label:gr,
+      data:DATA.properties.filter(p=>p.risk_grade===gr).map(p=>({x:p.jeonse_ratio*100,y:p.risk_score})),
+      backgroundColor:GRADE_COLORS[gr],pointRadius:3.2,pointHoverRadius:5}))},
+    options:{plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12}}},
+      scales:{x:{grid:{color:chartGrid()},title:{display:true,text:'전세가율 (%)'}},
+              y:{grid:{color:chartGrid()},min:0,max:100,title:{display:true,text:'위험도'}}}}
+  });
+}
+function gradeColorFromScore(s){ return s>=80?GRADE_COLORS['위험']:s>=55?GRADE_COLORS['경고']:s>=30?GRADE_COLORS['주의']:GRADE_COLORS['안전']; }
+
+load();
+</script>
+</body>
+</html>

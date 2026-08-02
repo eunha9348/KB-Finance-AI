@@ -1,0 +1,3 @@
+# 표준 라이브러리만으로 돌아갑니다. Flask 는 선택 사항이고,
+# 깔려 있으면 backend/app.py 가 Flask 로 뜹니다.
+Flask>=3.0 ; python_version >= "3.9"

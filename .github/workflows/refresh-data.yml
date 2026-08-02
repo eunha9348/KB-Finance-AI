@@ -1,0 +1,49 @@
+name: 실거래가 데이터 갱신
+
+# 로컬에서는 프록시 때문에 정부 API 호출이 막히는 경우가 있어서, 실데이터 수집은
+# 여기서 돌린다. 키는 저장소 Secrets 에만 두고 로그에는 마스킹된다.
+
+on:
+  workflow_dispatch: {}
+  # schedule:
+  #   - cron: "0 18 * * *"   # KST 03:00. 매일 돌리려면 주석 해제
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: ETL
+        env:
+          MOLIT_API_KEY: ${{ secrets.MOLIT_API_KEY }}
+          SEOUL_API_KEY: ${{ secrets.SEOUL_API_KEY }}
+        run: python data/etl.py
+
+      - name: 검증 리포트 재생성
+        run: python data/validate_risk.py
+
+      - name: DB → JSON
+        run: python data/export_json.py
+
+      - name: standalone.html 재빌드
+        run: python data/build_standalone.py
+
+      - name: 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add frontend/data.json frontend/standalone.html docs/risk_methodology_validation.md
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: 실거래가 데이터 갱신"
+          # 오래된 실행을 re-run 하면 main 이 앞서있어서 push 가 튕긴다
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main

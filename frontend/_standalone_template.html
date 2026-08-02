@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>전세 안전진단 콘솔 · 청년 주택 위험도 & KB 금융연계</title>
+<style>
+  :root{
+    color-scheme: light dark;
+    --ground:#f4f6f8; --panel:#ffffff; --panel-2:#f8fafc; --inset:#eef1f5;
+    --ink:#111823; --ink-soft:#54606f; --ink-faint:#8a95a4; --hairline:#e3e7ec;
+    --accent:#15507a; --accent-soft:#e8f0f6; --accent-ink:#0d3a5c;
+    --kb:#f6b900;
+    --safe:#1a8f6b; --warn:#c0891a; --alert:#d76a2f; --danger:#c8383b;
+    --safe-b:#e7f4ef; --warn-b:#f8f0dd; --alert-b:#faece2; --danger-b:#f9e6e6;
+    --map-land:#e9edf2; --map-river:#c2d6e6; --map-edge:#d9dfe6;
+    --r:12px; --r-sm:8px;
+    --shadow:0 1px 2px rgba(17,24,35,.05), 0 6px 20px rgba(17,24,35,.06);
+    --shadow-lg:0 2px 6px rgba(17,24,35,.08), 0 18px 42px rgba(17,24,35,.12);
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono","Menlo",monospace;
+    --sans:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,
+      "Apple SD Gothic Neo","Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ground:#0e1319; --panel:#161d26; --panel-2:#1a222d; --inset:#10161d;
+      --ink:#e9eef4; --ink-soft:#a3afbd; --ink-faint:#6b7787; --hairline:#28313c;
+      --accent:#59a3d6; --accent-soft:#17293650; --accent-ink:#a9d0ec;
+      --kb:#f6b900;
+      --safe:#3fb389; --warn:#d6a63c; --alert:#e58750; --danger:#e05a5c;
+      --safe-b:#12271f; --warn-b:#2a2313; --alert-b:#2c1d13; --danger-b:#2b1518;
+      --map-land:#1b232e; --map-river:#22384c; --map-edge:#2a3540;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 26px rgba(0,0,0,.4);
+      --shadow-lg:0 2px 6px rgba(0,0,0,.5), 0 22px 48px rgba(0,0,0,.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0e1319; --panel:#161d26; --panel-2:#1a222d; --inset:#10161d;
+    --ink:#e9eef4; --ink-soft:#a3afbd; --ink-faint:#6b7787; --hairline:#28313c;
+    --accent:#59a3d6; --accent-soft:#17293650; --accent-ink:#a9d0ec;
+    --kb:#f6b900;
+    --safe:#3fb389; --warn:#d6a63c; --alert:#e58750; --danger:#e05a5c;
+    --safe-b:#12271f; --warn-b:#2a2313; --alert-b:#2c1d13; --danger-b:#2b1518;
+    --map-land:#1b232e; --map-river:#22384c; --map-edge:#2a3540;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 26px rgba(0,0,0,.4);
+    --shadow-lg:0 2px 6px rgba(0,0,0,.5), 0 22px 48px rgba(0,0,0,.55);
+  }
+  :root[data-theme="light"]{
+    --ground:#f4f6f8; --panel:#ffffff; --panel-2:#f8fafc; --inset:#eef1f5;
+    --ink:#111823; --ink-soft:#54606f; --ink-faint:#8a95a4; --hairline:#e3e7ec;
+    --accent:#15507a; --accent-soft:#e8f0f6; --accent-ink:#0d3a5c;
+    --safe:#1a8f6b; --warn:#c0891a; --alert:#d76a2f; --danger:#c8383b;
+    --safe-b:#e7f4ef; --warn-b:#f8f0dd; --alert-b:#faece2; --danger-b:#f9e6e6;
+    --map-land:#e9edf2; --map-river:#c2d6e6; --map-edge:#d9dfe6;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+    font-size:14px;line-height:1.55;font-variant-numeric:tabular-nums;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  a{color:var(--accent);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+  .num{font-variant-numeric:tabular-nums;}
+  .eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--ink-faint);}
+
+  /* 상단바 */
+  .topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--panel) 88%,transparent);
+    backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--hairline);}
+  .topbar .inner{max-width:1440px;margin:0 auto;padding:13px 24px;display:flex;
+    align-items:center;gap:16px;flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:11px;}
+  .brand .mark{width:30px;height:30px;border-radius:8px;flex:none;
+    background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#000));
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:15px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.25);}
+  .brand h1{font-size:15.5px;margin:0;font-weight:700;letter-spacing:-.01em;line-height:1.2;}
+  .brand .sub{font-size:11px;color:var(--ink-faint);margin-top:1px;}
+  .topbar .spacer{margin-left:auto;}
+  .themebtn{font:inherit;font-size:12px;color:var(--ink-soft);background:var(--panel-2);
+    border:1px solid var(--hairline);border-radius:999px;padding:6px 13px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;}
+  .themebtn:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* 데이터 출처 배지 */
+  .provenance{max-width:1440px;margin:0 auto;padding:9px 24px 0;display:flex;gap:9px;
+    flex-wrap:wrap;align-items:center;font-size:11.5px;}
+  .prov-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+    background:var(--panel);border:1px solid var(--hairline);color:var(--ink-soft);}
+  .prov-chip b{color:var(--ink);font-weight:650;}
+  .prov-chip .st{width:7px;height:7px;border-radius:50%;flex:none;}
+  .st.real{background:var(--safe);} .st.fb{background:var(--ink-faint);}
+  .st.live{background:var(--accent);}
+
+  .wrap{max-width:1440px;margin:0 auto;padding:16px 24px 40px;display:flex;flex-direction:column;gap:16px;}
+
+  /* KPI */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;}
+  .kpi{background:var(--panel);border:1px solid var(--hairline);border-radius:var(--r);
+    padding:14px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .kpi .lbl{font-size:11px;color:var(--ink-soft);font-weight:600;}
+  .kpi .val{font-size:27px;font-weight:750;margin-top:5px;letter-spacing:-.02em;line-height:1;}
+  .kpi .val small{font-size:12.5px;font-weight:500;color:var(--ink-faint);letter-spacing:0;}
+  .kpi .spark{margin-top:9px;height:5px;border-radius:3px;background:var(--inset);overflow:hidden;display:flex;}
+  .kpi .spark i{height:100%;display:block;}
+
+  /* 카드 공통 */
+  .card{background:var(--panel);border:1px solid var(--hairline);border-radius:var(--r);
+    box-shadow:var(--shadow);overflow:hidden;}
+  .card > header{padding:13px 16px 12px;border-bottom:1px solid var(--hairline);
+    display:flex;align-items:center;gap:10px;}
+  .card > header h2{font-size:13px;margin:0;font-weight:680;letter-spacing:-.005em;}
+  .card > header .hint{margin-left:auto;font-size:11px;color:var(--ink-faint);}
+
+  .main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr);gap:16px;align-items:start;}
+  @media (max-width:1024px){ .main{grid-template-columns:1fr;} }
+
+  /* 필터 + 범례 */
+  .toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:11px 16px;
+    background:var(--panel-2);border-bottom:1px solid var(--hairline);}
+  .field{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:var(--ink-soft);}
+  select{font:inherit;font-size:12.5px;padding:6px 10px;border:1px solid var(--hairline);
+    border-radius:var(--r-sm);background:var(--panel);color:var(--ink);cursor:pointer;}
+  select:hover{border-color:var(--accent);}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin-left:auto;font-size:11.5px;align-items:center;}
+  .legend span{display:inline-flex;align-items:center;gap:5px;color:var(--ink-soft);}
+  .swatch{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+  /* 지도 */
+  .mapbox{position:relative;background:var(--panel);}
+  #map{display:block;width:100%;height:auto;}
+  .marker{cursor:pointer;transition:stroke-width .12s, opacity .12s;}
+  .marker:hover{stroke:var(--ink);stroke-width:1.6px;}
+  .marker.sel{stroke:var(--ink);stroke-width:2px;}
+  .dlabel{fill:var(--ink-faint);font-size:9.5px;font-weight:600;letter-spacing:-.02em;
+    pointer-events:none;}
+  .tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--panel);
+    font-size:11.5px;font-weight:500;padding:6px 10px;border-radius:7px;
+    transform:translate(-50%,-135%);white-space:nowrap;opacity:0;transition:opacity .1s;
+    z-index:5;box-shadow:var(--shadow-lg);}
+  .tip .k{opacity:.7;}
+
+  /* 우측 인스펙터 */
+  .inspector{position:sticky;top:78px;}
+  .insp-body{padding:16px;display:flex;flex-direction:column;gap:15px;}
+  .empty{color:var(--ink-faint);font-size:13px;text-align:center;padding:56px 18px;line-height:1.85;}
+  .empty svg{opacity:.5;margin-bottom:10px;}
+  .addr{font-size:16.5px;font-weight:730;letter-spacing:-.01em;line-height:1.3;}
+  .meta{font-size:12px;color:var(--ink-faint);margin-top:3px;display:flex;gap:7px;flex-wrap:wrap;}
+  .meta .badge{background:var(--inset);border-radius:5px;padding:1px 7px;color:var(--ink-soft);font-weight:600;}
+  .meta .badge.warn{background:var(--danger-b);color:var(--danger);}
+  .meta .badge.real{background:var(--safe-b);color:var(--safe);font-weight:700;}
+
+  .gauge{display:flex;align-items:center;gap:16px;}
+  .ring{position:relative;width:96px;height:96px;flex:none;border-radius:50%;}
+  .ring .in{position:absolute;inset:11px;background:var(--panel);border-radius:50%;
+    display:grid;place-items:center;}
+  .ring .in b{font-size:26px;font-weight:800;line-height:1;letter-spacing:-.02em;}
+  .ring .in em{font-size:9.5px;font-style:normal;color:var(--ink-faint);margin-top:2px;}
+  .grade-pill{font-size:12px;font-weight:720;padding:4px 12px;border-radius:999px;color:#fff;
+    display:inline-block;letter-spacing:.01em;}
+  .gauge .who{font-size:11.5px;color:var(--ink-soft);margin-top:7px;line-height:1.5;}
+
+  /* decomposition bar */
+  .decomp{display:flex;flex-direction:column;gap:6px;}
+  .decomp .track{height:22px;border-radius:6px;background:var(--inset);overflow:hidden;display:flex;}
+  .decomp .seg{height:100%;display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;color:#fff;white-space:nowrap;}
+  .decomp .seg.fund{background:var(--accent);}
+  .decomp .seg.ctx{background:color-mix(in srgb,var(--warn) 82%,#000 0%);}
+  .decomp .lg{display:flex;gap:14px;font-size:10.5px;color:var(--ink-soft);}
+  .decomp .lg i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px;}
+
+  .section-label{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--ink-faint);display:flex;align-items:center;gap:8px;}
+  .section-label::after{content:"";flex:1;height:1px;background:var(--hairline);}
+
+  .rows{display:flex;flex-direction:column;}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--hairline);}
+  .row:last-child{border-bottom:0;}
+  .row .k{color:var(--ink-soft);}
+  .row .v{font-weight:650;font-variant-numeric:tabular-nums;}
+  .row .v .meter{display:inline-block;width:56px;height:5px;border-radius:3px;background:var(--inset);
+    margin-left:8px;vertical-align:middle;overflow:hidden;}
+  .row .v .meter i{display:block;height:100%;}
+
+  /* news block */
+  .newsblock{background:var(--panel-2);border:1px solid var(--hairline);border-radius:var(--r-sm);
+    padding:12px 13px;}
+  .newsblock .top{display:flex;align-items:center;gap:9px;}
+  .senti-bar{flex:1;height:7px;border-radius:4px;background:var(--inset);overflow:hidden;}
+  .senti-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--warn),var(--danger));}
+  .newsblock .note{font-size:11.5px;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
+  .evidence{display:flex;flex-direction:column;gap:4px;margin-top:8px;}
+  .evidence a{font-size:11.5px;display:flex;gap:6px;align-items:baseline;}
+  .evidence a::before{content:"↗";color:var(--ink-faint);font-size:10px;}
+
+  /* 실제 위치 확인 버튼 */
+  .verify-note{font-size:11px;color:var(--ink-soft);line-height:1.55;margin-bottom:9px;
+    background:var(--warn-b);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);
+    border-radius:var(--r-sm);padding:8px 10px;}
+  .verify-note b{color:var(--ink);}
+  .verify-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .vbtn{display:flex;align-items:center;gap:7px;justify-content:flex-start;font-size:12px;
+    font-weight:600;padding:10px 11px;border:1px solid var(--hairline);border-radius:var(--r-sm);
+    background:var(--panel-2);color:var(--ink);text-decoration:none;transition:border-color .12s,color .12s;}
+  .vbtn:hover{border-color:var(--accent);color:var(--accent);text-decoration:none;}
+  .vbtn .ico{font-size:15px;line-height:1;}
+  .vbtn .ext{margin-left:auto;color:var(--ink-faint);font-size:11px;}
+
+  /* product card */
+  .prod{border:1px solid var(--hairline);border-left:3px solid var(--kb);border-radius:var(--r-sm);
+    padding:13px 14px;background:var(--panel-2);}
+  .prod .ptag{font-size:10.5px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);
+    padding:2px 9px;border-radius:999px;}
+  .prod .pname{font-size:14.5px;font-weight:730;margin:9px 0 4px;letter-spacing:-.01em;}
+  .prod .pdesc{font-size:12px;color:var(--ink-soft);line-height:1.55;}
+  .prod .prate{font-size:13px;margin-top:10px;}
+  .prod .prate b{color:var(--accent-ink);font-size:15.5px;font-weight:750;}
+  .prod .match{font-size:11.5px;color:var(--ink-soft);margin-top:9px;padding-top:9px;
+    border-top:1px dashed var(--hairline);line-height:1.5;}
+  .prod .golink{margin-top:9px;font-size:12px;font-weight:600;display:inline-flex;gap:5px;align-items:center;}
+
+  /* 하단 분석 영역 */
+  .analytics{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;}
+  .analytics .c-grade{grid-column:span 3;}
+  .analytics .c-dist{grid-column:span 5;}
+  .analytics .c-news{grid-column:span 4;}
+  @media (max-width:1024px){
+    .analytics .c-grade,.analytics .c-dist,.analytics .c-news{grid-column:1 / -1;}
+  }
+  .card-body{padding:15px 16px;}
+
+  .barrow{display:grid;grid-template-columns:58px 1fr 30px;align-items:center;gap:9px;
+    margin:6px 0;font-size:11.5px;}
+  .barrow .bl{color:var(--ink-soft);text-align:right;white-space:nowrap;}
+  .barrow .bt{background:var(--inset);border-radius:5px;height:15px;overflow:hidden;}
+  .barrow .bf{height:100%;border-radius:5px;transition:width .3s;}
+  .barrow .bv{font-weight:650;text-align:right;}
+  .barrow.hot .bl{color:var(--danger);font-weight:700;}
+
+  .termcloud{display:flex;flex-direction:column;gap:7px;}
+  .term{display:grid;grid-template-columns:88px 1fr 20px;align-items:center;gap:9px;font-size:11.5px;}
+  .term .tw{color:var(--ink);font-weight:600;}
+  .term .tb{background:var(--inset);border-radius:5px;height:13px;overflow:hidden;}
+  .term .tf{height:100%;background:var(--accent);border-radius:5px;opacity:.85;}
+  .term .tv{text-align:right;color:var(--ink-soft);font-weight:650;}
+  .newshint{font-size:11px;color:var(--ink-faint);margin-top:11px;line-height:1.6;
+    padding-top:11px;border-top:1px solid var(--hairline);}
+  .newshint a{font-weight:600;}
+
+  .foot{font-size:11.5px;color:var(--ink-faint);line-height:1.75;padding:6px 2px 0;}
+  .foot code{background:var(--inset);padding:1px 6px;border-radius:5px;font-family:var(--mono);font-size:11px;}
+  .foot .sep{margin:10px 0;height:1px;background:var(--hairline);}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="inner">
+    <div class="brand">
+      <div class="mark">安</div>
+      <div>
+        <h1>전세 안전진단 콘솔</h1>
+        <div class="sub">청년·대학생 주택 위험도 &amp; KB 금융연계 — 공공·제휴 데이터 기반</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="themebtn" id="themebtn" type="button" aria-label="테마 전환">
+      <span id="themeicon">◐</span><span id="themetxt">테마</span>
+    </button>
+  </div>
+  <div class="provenance" id="provenance"></div>
+</div>
+
+<div class="wrap">
+  <section class="kpis" id="kpis" aria-label="핵심 지표"></section>
+
+  <section class="main">
+    <div class="card">
+      <div class="toolbar">
+        <span class="field">자치구
+          <select id="fDistrict"><option value="">전체</option></select></span>
+        <span class="field">위험등급
+          <select id="fGrade"><option value="">전체</option>
+            <option>안전</option><option>주의</option><option>경고</option><option>위험</option>
+          </select></span>
+        <div class="legend" aria-hidden="true">
+          <span><i class="swatch" style="background:var(--safe)"></i>안전</span>
+          <span><i class="swatch" style="background:var(--warn)"></i>주의</span>
+          <span><i class="swatch" style="background:var(--alert)"></i>경고</span>
+          <span><i class="swatch" style="background:var(--danger)"></i>위험</span>
+          <span style="color:var(--ink-faint)">· 원 크기 = 추정시세</span>
+        </div>
+      </div>
+      <div class="mapbox">
+        <svg id="map" viewBox="0 0 900 600" preserveAspectRatio="xMidYMid meet"
+             role="img" aria-label="서울 자치구별 매물 위험도 분포"></svg>
+        <div class="tip" id="tip"></div>
+      </div>
+    </div>
+
+    <div class="card inspector">
+      <header><h2>매물 진단 리포트</h2><span class="hint" id="inspHint">매물 선택</span></header>
+      <div class="insp-body" id="detail">
+        <div class="empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="M16 16l4.5 4.5"/></svg>
+          지도의 매물(원)을 선택하면<br/>위험도 분해·금융지표·뉴스 리스크 근거와<br/>맞춤 KB 금융상품을 확인할 수 있습니다.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="analytics">
+    <div class="card c-grade">
+      <header><h2>위험등급 분포</h2></header>
+      <div class="card-body" id="cGrade"></div>
+    </div>
+    <div class="card c-dist">
+      <header><h2>자치구 평균 위험도</h2><span class="hint">상위 12개구</span></header>
+      <div class="card-body" id="cDistrict"></div>
+    </div>
+    <div class="card c-news">
+      <header><h2>뉴스 리스크 브리핑</h2><span class="hint" id="newsAsOf"></span></header>
+      <div class="card-body" id="cNews"></div>
+    </div>
+  </section>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+"use strict";
+const DATA = JSON.parse(document.getElementById('payload').textContent);
+const RC = {안전:'--safe', 주의:'--warn', 경고:'--alert', 위험:'--danger'};
+const RB = {안전:'--safe-b', 주의:'--warn-b', 경고:'--alert-b', 위험:'--danger-b'};
+const ORDER = ['안전','주의','경고','위험'];
+const SVGNS='http://www.w3.org/2000/svg';
+const cv = n => getComputedStyle(document.body).getPropertyValue(n).trim();
+const eok = n => (n/10000).toFixed(n>=10000?1:2);           // 만원 → 억
+const pct = x => (x*100).toFixed(0)+'%';
+const rc = g => cv(RC[g]||'--ink-soft');
+
+/* 위경도 → SVG 좌표 */
+const BB={latMin:37.43,latMax:37.70,lngMin:126.77,lngMax:127.18};
+const W=900,H=600,PAD=30;
+function proj(lat,lng){
+  const x=PAD+(lng-BB.lngMin)/(BB.lngMax-BB.lngMin)*(W-2*PAD);
+  const y=PAD+(BB.latMax-lat)/(BB.latMax-BB.latMin)*(H-2*PAD);
+  return [x,y];
+}
+const HAN=[[126.80,37.578],[126.86,37.565],[126.905,37.556],[126.94,37.532],
+  [126.965,37.518],[127.00,37.512],[127.045,37.518],[127.09,37.523],[127.135,37.53]];
+function el(tag,attrs,parent){const e=document.createElementNS(SVGNS,tag);
+  for(const k in attrs)e.setAttribute(k,attrs[k]); if(parent)parent.appendChild(e); return e;}
+
+function drawBase(svg){
+  el('rect',{x:0,y:0,width:W,height:H,fill:cv('--map-land')},svg);
+  // 격자선
+  for(let i=1;i<6;i++)el('line',{x1:0,y1:i*H/6,x2:W,y2:i*H/6,stroke:cv('--map-edge'),'stroke-width':1,opacity:.5},svg);
+  for(let i=1;i<9;i++)el('line',{x1:i*W/9,y1:0,x2:i*W/9,y2:H,stroke:cv('--map-edge'),'stroke-width':1,opacity:.5},svg);
+  let d=''; HAN.forEach((p,i)=>{const [x,y]=proj(p[1],p[0]); d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' ';});
+  el('path',{d,fill:'none',stroke:cv('--map-river'),'stroke-width':15,'stroke-linecap':'round','stroke-linejoin':'round'},svg);
+  const [hx,hy]=proj(37.535,126.90);
+  el('text',{x:hx,y:hy-13,fill:cv('--map-river'),'font-size':11,'font-weight':700},svg).textContent='한강';
+  DATA.districts.forEach(dg=>{const [x,y]=proj(dg.lat,dg.lng);
+    el('text',{x,y,class:'dlabel','text-anchor':'middle'},svg).textContent=dg.name;});
+}
+
+let SVG,TIP,SELID=null;
+function markers(){
+  SVG.querySelectorAll('.marker').forEach(m=>m.remove());
+  filtered().forEach(p=>{
+    const [x,y]=proj(p.lat,p.lng);
+    const r=3+Math.sqrt(p.sale_price)/36;
+    const c=el('circle',{cx:x.toFixed(1),cy:y.toFixed(1),r:r.toFixed(1),
+      class:'marker'+(p.property_id===SELID?' sel':''),fill:rc(p.risk_grade),
+      'fill-opacity':.8,stroke:'#fff','stroke-width':.8},SVG);
+    c.addEventListener('click',()=>showDetail(p.property_id));
+    c.addEventListener('mousemove',ev=>tip(ev,`<b>${p.address}</b> <span class="k">·</span> 위험도 ${p.risk_score} <span class="k">(${p.risk_grade})</span>`));
+    c.addEventListener('mouseleave',()=>TIP.style.opacity=0);
+  });
+}
+function tip(ev,html){const box=document.querySelector('.mapbox').getBoundingClientRect();
+  TIP.innerHTML=html; TIP.style.left=(ev.clientX-box.left)+'px';
+  TIP.style.top=(ev.clientY-box.top)+'px'; TIP.style.opacity=1;}
+
+function filtered(){
+  const d=document.getElementById('fDistrict').value, g=document.getElementById('fGrade').value;
+  return DATA.properties.filter(p=>(!d||p.district_name===d)&&(!g||p.risk_grade===g));
+}
+
+/* 인스펙터 */
+function rateTxt(prod,adj){
+  if(prod.rate_min==null||prod.rate_max==null)
+    return `<span style="color:var(--ink-faint)">${prod.rate_asof||'변동금리'}</span>`;
+  const lo=(prod.rate_min+adj).toFixed(2), hi=(prod.rate_max+adj).toFixed(2);
+  let t=`연 <b>${lo}% ~ ${hi}%</b>`;
+  t += adj ? ` <span style="color:var(--ink-faint)">(공시 ${prod.rate_min}~${prod.rate_max}%, 제안우대 ${adj.toFixed(1)}%p)</span>`
+           : ` <span style="color:var(--ink-faint)">(${prod.rate_asof||'공시금리'})</span>`;
+  return t;
+}
+function meterRow(k,vTxt,frac,color){
+  return `<div class="row"><span class="k">${k}</span><span class="v">${vTxt}
+    <span class="meter"><i style="width:${Math.min(frac*100,100)}%;background:${color}"></i></span></span></div>`;
+}
+function showDetail(pid){
+  const p=DATA.properties.find(x=>x.property_id===pid);
+  SELID=pid; markers();
+  document.getElementById('inspHint').textContent=p.district_name;
+  const prod=(DATA.products||{})[p.recommended_product];
+  const g=p.risk_grade, c=rc(g), deg=p.risk_score*3.6, adj=p.proposal_rate_adjust||0;
+  const dist=DATA.districts.find(d=>d.name===p.district_name)||{};
+  const sig=(DATA.news.district_signals||{})[p.district_name];
+  const baseline=DATA.news.city_index;
+  // 100점 만점 기준 기여 포인트로 환산
+  const fundPts=78*(p.fundamental_score||0), ctxPts=22*(p.context_score||0);
+  const senti=p.district_sentiment||0;
+  const isReal = p.source==='molit_csv';
+  const debtKnown = p.debt_known!==0;
+  const q = encodeURIComponent(p.complex_name ? (p.district_name+' '+p.complex_name)
+                                              : (p.district_name+' '+(p.building_type||'')));
+
+  let evi='';
+  if(sig){
+    evi = `<div class="note">${sig.note}</div>
+      <div class="evidence">`+ (sig.evidence||[]).map(u=>
+        `<a href="${u}" target="_blank" rel="noopener">${srcName(u)}</a>`).join('') +`</div>`;
+  } else {
+    evi = `<div class="note">이 자치구는 전세사기 실명 보도 근거가 없어 <b>서울 기준선(${baseline.toFixed(2)})</b>을 적용합니다. 별도 가산 없음.</div>`;
+  }
+  const cvTxt = dist.jeonse_cv ? `${(dist.jeonse_cv*100).toFixed(0)}%` : '미상(실거래 연동 시 표시)';
+
+  document.getElementById('detail').innerHTML=`
+    <div>
+      <div class="addr">${p.address}</div>
+      <div class="meta">
+        ${isReal?'<span class="badge real">국토부 실거래</span>':'<span class="badge">시연 샘플</span>'}
+        <span class="badge">${p.building_type||'-'}</span>
+        <span class="badge">${p.build_year||'-'}년 준공</span>
+        <span class="badge">전용 ${p.area_m2||'-'}㎡</span>
+        ${p.is_illegal?'<span class="badge warn">⚠ 위반건축물</span>':''}
+      </div>
+    </div>
+
+    <div class="gauge">
+      <div class="ring" style="background:conic-gradient(${c} ${deg}deg, var(--inset) 0)">
+        <div class="in"><b style="color:${c}">${p.risk_score}</b><em>/ 100</em></div>
+      </div>
+      <div>
+        <span class="grade-pill" style="background:${c}">${g}</span>
+        <div class="who">${isReal?'실거래가 ':'시세 '}<b>${eok(p.sale_price)}억</b>${isReal?'(추정)':''} · 보증금 <b>${eok(p.deposit)}억</b><br/>
+          ${debtKnown?'근저당 '+eok(p.mortgage_amount)+'억 설정':'근저당 미확인 (등기부 제휴 시 반영)'}</div>
+      </div>
+    </div>
+
+    <div class="decomp">
+      <div class="section-label">위험도 분해</div>
+      <div class="track" role="img" aria-label="펀더멘털 ${fundPts.toFixed(0)}점, 컨텍스트 ${ctxPts.toFixed(0)}점">
+        <div class="seg fund" style="width:${fundPts/100*100}%">${fundPts>=8?'펀더멘털 '+fundPts.toFixed(0):''}</div>
+        <div class="seg ctx" style="width:${ctxPts/100*100}%">${ctxPts>=8?ctxPts.toFixed(0):''}</div>
+      </div>
+      <div class="lg"><span><i style="background:var(--accent)"></i>물건 펀더멘털 ${fundPts.toFixed(0)}점 (78%)</span>
+        <span><i style="background:color-mix(in srgb,var(--warn) 82%,#000)"></i>지역 컨텍스트 ${ctxPts.toFixed(0)}점 (22%)</span></div>
+    </div>
+
+    <div>
+      <div class="section-label">금융·물건 지표 (펀더멘털)</div>
+      <div class="rows">
+        ${meterRow('전세가율', pct(p.jeonse_ratio), p.jeonse_ratio, p.jeonse_ratio>0.8?cv('--alert'):cv('--accent'))}
+        ${meterRow('선순위채권비율'+(debtKnown?'':'*'), `<b style="color:${p.senior_debt_ratio>1?c:'inherit'}">${pct(p.senior_debt_ratio)}</b>`, p.senior_debt_ratio, p.senior_debt_ratio>1?cv('--danger'):p.senior_debt_ratio>0.7?cv('--alert'):cv('--safe'))}
+        <div class="row"><span class="k">주거유형 위험</span><span class="v">${p.building_type||'-'}</span></div>
+        <div class="row"><span class="k">건물 노후도</span><span class="v">${p.build_year?(2026-p.build_year)+'년':'-'}</span></div>
+      </div>
+      ${debtKnown?'':'<div class="note" style="font-size:11px;color:var(--ink-faint);margin-top:6px">* 등기부가 공공 API로 열리지 않아 근저당은 미반영입니다. 지금은 선순위채권비율이 전세가율과 같고, 실제 근저당이 있으면 위험도가 올라갑니다.</div>'}
+    </div>
+
+    <div>
+      <div class="section-label">지역 리스크 (뉴스 감성 · 2-gram)</div>
+      <div class="newsblock">
+        <div class="top">
+          <span style="font-size:12px;color:var(--ink-soft);white-space:nowrap">감성지수</span>
+          <span class="senti-bar"><i style="width:${senti*100}%"></i></span>
+          <b style="font-size:13px;white-space:nowrap">${senti.toFixed(2)}</b>
+        </div>
+        ${evi}
+        <div class="note" style="margin-top:8px">전세가 변동성(CV): <b>${cvTxt}</b></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">실제 위치·매물 확인</div>
+      <div class="verify-note">${isReal
+        ? `<b>${p.complex_name}</b>은(는) 국토부 실거래가에 등록된 단지입니다. 아래 버튼으로
+           거리사진과 위치를 확인해 보세요. 동·호수는 개인정보라 공개되지 않습니다.`
+        : `자치구 평균으로 만든 <b>시연 샘플</b>이라 특정 매물을 가리키지 않습니다.
+           아래 버튼은 이 좌표가 있는 실제 지역으로 연결됩니다.`}</div>
+      <div class="verify-grid">
+        <a class="vbtn" href="https://map.kakao.com/link/roadview/${p.lat},${p.lng}" target="_blank" rel="noopener">
+          <span class="ico">📷</span>거리 사진(로드뷰)<span class="ext">↗</span></a>
+        <a class="vbtn" href="https://map.kakao.com/link/map/${q.replace(/%20/g,'+')},${p.lat},${p.lng}" target="_blank" rel="noopener">
+          <span class="ico">🗺️</span>지도에서 위치<span class="ext">↗</span></a>
+        <a class="vbtn" href="https://map.naver.com/p/search/${q}" target="_blank" rel="noopener">
+          <span class="ico">🏠</span>${isReal?'이 단지 검색':'이 지역 매물·장소'}<span class="ext">↗</span></a>
+        <a class="vbtn" href="https://rt.molit.go.kr/" target="_blank" rel="noopener">
+          <span class="ico">📊</span>국토부 실거래가<span class="ext">↗</span></a>
+      </div>
+    </div>
+
+    ${prod?`<div>
+      <div class="section-label">맞춤 KB 금융상품</div>
+      <div class="prod">
+        <span class="ptag">${prod.provider} · ${prod.product_type}</span>
+        <div class="pname">${prod.name}</div>
+        <div class="pdesc">${prod.description}</div>
+        <div class="prate">${rateTxt(prod,adj)}</div>
+        <div class="match">매칭 근거 · ${p.match_reason||''}</div>
+        ${prod.reference_url?`<a class="golink" href="${prod.reference_url}" target="_blank" rel="noopener">${prod.name} 안내 페이지로 이동 →</a>`:''}
+      </div>
+    </div>`:''}`;
+}
+function srcName(u){
+  try{const h=new URL(u).hostname.replace('www.','');
+    const m={'daeryunlaw.com':'대륜 법무법인','urbanpick.kr':'어반픽','khan.co.kr':'경향신문',
+      'newsis.com':'뉴시스','kukinews.com':'쿠키뉴스','localsegye.co.kr':'로컬세계',
+      'fnnews.com':'파이낸셜뉴스','mstoday.co.kr':'MS투데이','pressian.com':'프레시안'};
+    return (m[h]||h)+' 기사';
+  }catch(e){return '기사 원문';}
+}
+
+/* KPI 타일 */
+function initKpis(){
+  const s=DATA.stats,g=s.grade_distribution;
+  const risky=(g['경고']||0)+(g['위험']||0);
+  const segs=ORDER.map(k=>`<i style="width:${(g[k]||0)/s.total*100}%;background:${rc(k)}"></i>`).join('');
+  const tiles=[
+    ['진단 매물',`${s.total}<small> 건</small>`,`<i style="width:100%;background:var(--accent)"></i>`],
+    ['평균 위험도',`${s.avg_risk}<small> /100</small>`,`<i style="width:${s.avg_risk}%;background:${rc(gradeOf(s.avg_risk))}"></i>`],
+    ['고위험 (경고·위험)',`${risky}<small> 건</small>`,`<i style="width:${risky/s.total*100}%;background:var(--danger)"></i>`],
+    ['등급 분포',``,segs],
+    ['분석 자치구',`${DATA.districts.length}<small> 개구</small>`,`<i style="width:100%;background:var(--accent)"></i>`],
+  ];
+  document.getElementById('kpis').innerHTML=tiles.map(([l,v,sp])=>
+    `<div class="kpi"><div class="lbl">${l}</div>${v?`<div class="val">${v}</div>`:'<div class="val" style="font-size:15px;color:var(--ink-faint);font-weight:600">안전→위험</div>'}
+     <div class="spark">${sp}</div></div>`).join('');
+}
+function gradeOf(s){return s>=80?'위험':s>=55?'경고':s>=30?'주의':'안전';}
+
+/* 출처 배지 */
+function initProvenance(){
+  const pv=DATA.stats.provenance||{}, n=DATA.news;
+  const saleReal=pv.sale_price_real>0, jeonseReal=pv.jeonse_price_real>0;
+  const realListings=DATA.properties.filter(p=>p.source==='molit_csv').length;
+  const period = (pv.tx_from&&pv.tx_to)
+    ? `${pv.tx_from.slice(0,7)}~${pv.tx_to.slice(0,7)} · ${pv.tx_count.toLocaleString()}건`
+    : null;
+  const chips=[];
+  if(realListings>0) chips.push([`매물`, `국토부 실거래 실제 매물 ${realListings}건`, 'real']);
+  else chips.push([`매물`, `시연 샘플 ${DATA.stats.total}건`, 'fb']);
+  chips.push([`매매시세`, saleReal?`실거래 ${pv.sale_price_real}구`:'FALLBACK 근사', saleReal?'real':'fb']);
+  chips.push([`전세시세`, jeonseReal?`실거래 ${pv.jeonse_price_real}구`:'FALLBACK 근사', jeonseReal?'real':'fb']);
+  if(period) chips.push([`실거래 기간`, period, 'real']);
+  chips.push([`뉴스 감성`, `기사 ${n.n_articles}건 · 기준선 ${n.city_index.toFixed(2)}`, 'live']);
+  chips.push([`데이터`, `공공·제휴 채널만 사용`, 'real']);
+  document.getElementById('provenance').innerHTML=chips.map(([k,v,st])=>
+    `<span class="prov-chip"><span class="st ${st}"></span>${k} <b>${v}</b></span>`).join('');
+}
+
+/* 등급 도넛 */
+function drawDonut(){
+  const g=DATA.stats.grade_distribution, total=DATA.stats.total;
+  const cx=88,cy=96,rO=74,rI=47; let a=-Math.PI/2;
+  const svg=el('svg',{viewBox:'0 0 260 192',style:'width:100%;height:auto;display:block;max-width:300px;margin:0 auto'},null);
+  ORDER.forEach(k=>{
+    const v=g[k]||0,frac=v/total; if(!frac)return;
+    const a2=a+frac*2*Math.PI,large=frac>.5?1:0;
+    const x1=cx+rO*Math.cos(a),y1=cy+rO*Math.sin(a),x2=cx+rO*Math.cos(a2),y2=cy+rO*Math.sin(a2);
+    const xi2=cx+rI*Math.cos(a2),yi2=cy+rI*Math.sin(a2),xi1=cx+rI*Math.cos(a),yi1=cy+rI*Math.sin(a);
+    el('path',{d:`M${x1} ${y1} A${rO} ${rO} 0 ${large} 1 ${x2} ${y2} L${xi2} ${yi2} A${rI} ${rI} 0 ${large} 0 ${xi1} ${yi1} Z`,
+      fill:rc(k),stroke:cv('--panel'),'stroke-width':2.5},svg);
+    a=a2;
+  });
+  el('text',{x:cx,y:cy-3,'text-anchor':'middle','font-size':25,'font-weight':800,fill:cv('--ink')},svg).textContent=total;
+  el('text',{x:cx,y:cy+15,'text-anchor':'middle','font-size':10.5,fill:cv('--ink-faint')},svg).textContent='진단 매물';
+  let ly=30;
+  ORDER.forEach(k=>{
+    el('rect',{x:182,y:ly-10,width:11,height:11,rx:3,fill:rc(k)},svg);
+    const t=el('text',{x:199,y:ly,'font-size':12,fill:cv('--ink-soft')},svg);
+    t.textContent=`${k}`;
+    const n=el('text',{x:252,y:ly,'font-size':12,'font-weight':700,'text-anchor':'end',fill:cv('--ink')},svg);
+    n.textContent=`${g[k]||0}`; ly+=34;
+  });
+  document.getElementById('cGrade').appendChild(svg);
+}
+
+/* 자치구 막대 */
+function drawDistrictBars(){
+  const dd=[...DATA.districts].sort((a,b)=>b.avg_risk-a.avg_risk).slice(0,12);
+  const box=document.getElementById('cDistrict');
+  const sigSet=new Set(Object.keys(DATA.news.district_signals||{}));
+  dd.forEach(d=>{
+    const row=document.createElement('div');
+    row.className='barrow'+(sigSet.has(d.name)?' hot':'');
+    row.innerHTML=`<div class="bl">${d.name}${sigSet.has(d.name)?' ●':''}</div>
+      <div class="bt"><div class="bf" style="width:${d.avg_risk}%;background:${rc(gradeOf(d.avg_risk))}"></div></div>
+      <div class="bv">${d.avg_risk}</div>`;
+    box.appendChild(row);
+  });
+  const note=document.createElement('div');
+  note.className='newshint';
+  note.innerHTML='● 표시 = 전세사기 실명 보도가 있는 자치구(뉴스 감성 가산 반영).';
+  box.appendChild(note);
+}
+
+/* 뉴스 브리핑 */
+function drawNews(){
+  const n=DATA.news, box=document.getElementById('cNews');
+  document.getElementById('newsAsOf').textContent=`수집 ${n.collected_on||''}`;
+  const maxv=Math.max(...n.terms.map(t=>t.weight*t.df),1);
+  const top=n.terms.slice(0,6);
+  box.innerHTML=`
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px">
+      <div style="font-size:26px;font-weight:800;letter-spacing:-.02em">${n.city_index.toFixed(2)}</div>
+      <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.4">서울 감성 기준선<br/>
+        <span style="color:var(--ink-faint)">실기사 ${n.n_articles}건 · risk_mass ${n.risk_mass}</span></div>
+    </div>
+    <div class="section-label" style="margin-bottom:9px">상위 2-gram 위험어</div>
+    <div class="termcloud">${top.map(t=>`
+      <div class="term"><div class="tw">${t.term}</div>
+        <div class="tb"><div class="tf" style="width:${t.weight*t.df/maxv*100}%"></div></div>
+        <div class="tv">${t.df}</div></div>`).join('')}</div>
+    <div class="newshint">가중치 × 문서빈도(df)로 산출. 피해다발 자치구(관악·강서 등)만 기준선 위로 가산합니다.
+      기사 목록과 URL은 <a href="https://github.com/eunha9348/KB-Finance-AI/blob/main/data/news_sentiment.json" target="_blank" rel="noopener">news_sentiment.json</a>에 그대로 들어 있습니다.</div>`;
+}
+
+/* 푸터 */
+function initFoot(){
+  document.getElementById('foot').innerHTML=`
+    위험도 = 100 × (0.78 · <b>펀더멘털 f</b> + 0.22 · <b>컨텍스트 c</b>).
+    f = 선순위채권비율<code>(근저당+보증금)/매매가</code> + 전세가율 + 위반건축물 + 주거유형 + 노후도.
+    c = 전세가 변동성 + 뉴스 감성(2-gram) 초과분.
+    <a href="https://github.com/eunha9348/KB-Finance-AI/blob/main/docs/risk_methodology_validation.md" target="_blank" rel="noopener">검증 리포트</a>는
+    <code>python data/validate_risk.py</code> 로 다시 뽑을 수 있습니다.
+    <div class="sep"></div>
+    ※ 자치구 시세는 실거래가 API·CSV 를 연동하면 실데이터로 갱신됩니다.
+    근저당은 등기부가 공공 API 로 열리지 않아 CSV 모드에서는 미확인으로 두었고,
+    연동 시 선순위채권비율이 지금보다 올라갈 수 있습니다.`;
+}
+
+/* 필터 · 테마 */
+function initFilters(){
+  const sel=document.getElementById('fDistrict');
+  [...new Set(DATA.properties.map(p=>p.district_name))].sort().forEach(nm=>
+    sel.insertAdjacentHTML('beforeend',`<option>${nm}</option>`));
+  sel.onchange=markers; document.getElementById('fGrade').onchange=markers;
+}
+function applyThemeIcon(){
+  const dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const attr=document.documentElement.getAttribute('data-theme');
+  const isDark = attr ? attr==='dark' : dark;
+  document.getElementById('themeicon').textContent=isDark?'☾':'☀';
+}
+document.getElementById('themebtn').onclick=()=>{
+  const cur=document.documentElement.getAttribute('data-theme')
+    || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  document.documentElement.setAttribute('data-theme', cur==='dark'?'light':'dark');
+  applyThemeIcon();
+};
+
+/* 시작 */
+SVG=document.getElementById('map'); TIP=document.getElementById('tip');
+drawBase(SVG); initProvenance(); initKpis(); initFilters(); markers();
+drawDonut(); drawDistrictBars(); drawNews(); initFoot(); applyThemeIcon();
+new MutationObserver(()=>{ SVG.innerHTML=''; drawBase(SVG); markers();
+  ['cGrade'].forEach(id=>{const b=document.getElementById(id); b.innerHTML=''; });
+  drawDonut(); applyThemeIcon();
+}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+</script>
+</body>
+</html>

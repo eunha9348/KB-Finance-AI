@@ -1,0 +1,8 @@
+# 재생성 가능한 산출물
+db/housing.db
+__pycache__/
+*.pyc
+.DS_Store
+
+# 로컬 비밀키 (커밋 금지 — .env.example을 복사해서 사용)
+.env

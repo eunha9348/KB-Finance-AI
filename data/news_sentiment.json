@@ -1,0 +1,137 @@
+{
+  "_meta": {
+    "purpose": "전세시장 뉴스 감성분석용 실제 기사 코퍼스 + 2-gram 위험 렉시콘. 위험도 산출의 심리·시장 압력 요소로 사용된다.",
+    "no_hallucination_policy": "corpus 의 모든 항목은 실제로 존재하는 기사이며 url/source/date 를 기록한다. snippet 은 기사 제목(verbatim) 또는 검색 스니펫에서 확인된 사실만 담는다. 존재하지 않는 기사·수치를 지어내지 않는다. 자치구별 신호(district_signals)는 해당 자치구를 실명으로 언급한 실제 근거가 있는 경우에만 부여하고, 근거 없는 자치구는 서울 전체 기준선(city baseline)을 상속한다.",
+    "collected_on": "2026-07-22",
+    "collection_method": "웹 검색으로 수집한 실제 언론 보도 제목/URL. 갱신 시 동일 방식으로 뉴스를 재수집해 이 파일을 교체한다.",
+    "coverage_note": "코퍼스는 서울 전체 및 일부 자치구(관악·강서·구로·금천) 중심. 나머지 자치구는 실명 근거가 없어 city baseline 을 사용한다(정직성 원칙)."
+  },
+  "lexicon_2gram": [
+    {"term": "전세 사기", "weight": 3, "polarity": "risk", "rationale": "보증금 편취 범죄 직접 신호"},
+    {"term": "깡통 전세", "weight": 3, "polarity": "risk", "rationale": "매매가≤전세가+선순위채권, 회수 불능 신호"},
+    {"term": "보증금 미반환", "weight": 3, "polarity": "risk", "rationale": "임대인 반환 불이행"},
+    {"term": "보증 사고", "weight": 3, "polarity": "risk", "rationale": "HUG 등 보증기관 대위변제 사고"},
+    {"term": "빌라 왕", "weight": 3, "polarity": "risk", "rationale": "대규모 조직적 전세사기 상징어"},
+    {"term": "역전세 난", "weight": 2, "polarity": "risk", "rationale": "전세가 하락으로 보증금 반환 곤란"},
+    {"term": "무단 증축", "weight": 2, "polarity": "risk", "rationale": "위반건축물 → 보증가입·경매 배당 불리"},
+    {"term": "위반 건축물", "weight": 2, "polarity": "risk", "rationale": "건축물대장 위반, 보증 거절 사유"},
+    {"term": "경매 진행", "weight": 2, "polarity": "risk", "rationale": "담보물 처분 단계, 보증금 회수 위험"},
+    {"term": "부채 비율", "weight": 2, "polarity": "risk", "rationale": "선순위채권 과다 신호(부채비율 90% 초과 위험)"},
+    {"term": "전세가 하락", "weight": 2, "polarity": "risk", "rationale": "역전세·깡통전세 유발"},
+    {"term": "매물 부족", "weight": 1, "polarity": "risk", "rationale": "전세가 상승 압력 → 전세가율 상승 위험"},
+    {"term": "전세값 상승", "weight": 1, "polarity": "risk", "rationale": "전세가율 상승 → 갭 위험 증가"},
+    {"term": "전셋값 상승", "weight": 1, "polarity": "risk", "rationale": "전세가율 상승 → 갭 위험 증가"},
+    {"term": "피해 지원", "weight": 1, "polarity": "context", "rationale": "피해 발생 지역 맥락 신호(지원센터 개설 등)"},
+    {"term": "보증 기준", "weight": 1, "polarity": "context", "rationale": "보증제도 변화 맥락(강화=위험감소, 완화=위험증가)"}
+  ],
+  "corpus": [
+    {
+      "title": "전세사기전문변호사와 알아보는 2026년 전세 시장…전세사기 피해자 누적 '3만 6천명'",
+      "url": "https://www.daeryunlaw.com/trend/11017",
+      "source": "대륜 법무법인(동향)",
+      "date": "2026",
+      "facts": "전세사기 피해자 누적 36,449명(2026-01-27 기준), 수도권 60.4%(서울 10,375·경기 8,010·인천 3,635), 40세 미만 청년 75.96%",
+      "scope": "national"
+    },
+    {
+      "title": "[리스크관리] '126% 룰' 적용 후 1년, 2026년 빌라·오피스텔 역전세 탈출법 - 역전세난 대응과 보증금 사수전략",
+      "url": "https://urbanpick.kr/news/119",
+      "source": "어반픽",
+      "date": "2026",
+      "facts": "공시가격 126% 룰 강화 1년, 비아파트 역전세 심화. 역전세 구간 단지 보증금 반환 사고율 전년 대비 25%+ 상승 언급",
+      "scope": "national"
+    },
+    {
+      "title": "[단독]전세사기 키운 'HUG 보증기준 완화'…다시 조이자 사고 감소",
+      "url": "https://www.khan.co.kr/article/202510091436001",
+      "source": "경향신문",
+      "date": "2025-10-09",
+      "facts": "부채비율 90% 초과 주택 보증사고 금액 2023-05 3조3375억 → 2025-08 4120억으로 87.6% 감소(보증기준 강화 효과)",
+      "scope": "national"
+    },
+    {
+      "title": "[단독]서울서 전세사기 피해 가장 많이 발생한 지역 강서구 아닌 '관악구'",
+      "url": "https://www.newsis.com/view/NISX20241017_0002923346",
+      "source": "뉴시스",
+      "date": "2024-10-17",
+      "facts": "서울 전세사기 피해 최다 지역이 관악구로 집계(강서구를 앞섬)",
+      "scope": "district",
+      "districts": ["관악구", "강서구"]
+    },
+    {
+      "title": "\"3억을 못 돌려받고 있어요\"…청년안심주택 전세사기 피해 심각",
+      "url": "https://www.kukinews.com/article/view/kuk202506270145",
+      "source": "쿠키뉴스",
+      "date": "2025-06-27",
+      "facts": "청년안심주택에서도 보증금 미반환 피해 발생",
+      "scope": "national"
+    },
+    {
+      "title": "서울 전세사기 피해 10개월간 6935억…강서구 가장 아팠다",
+      "url": "https://www.khan.co.kr/article/202307112120005",
+      "source": "경향신문",
+      "date": "2023-07-11",
+      "facts": "서울 전세사기 피해 10개월 6935억원, 강서구 피해 최다(2023년 기준)",
+      "scope": "district",
+      "districts": ["강서구"]
+    },
+    {
+      "title": "'전세사기' 낙인에 거래끊긴 강서구 화곡동 빌라",
+      "url": "https://www.khan.co.kr/article/202304300849001",
+      "source": "경향신문",
+      "date": "2023-04-30",
+      "facts": "강서구 화곡동 빌라 거래 위축(전세사기 여파)",
+      "scope": "district",
+      "districts": ["강서구"]
+    },
+    {
+      "title": "관악구, '청년이 알아야 할 주택임차인 보호안내' 제작",
+      "url": "https://localsegye.co.kr/news/view/1065574677539020",
+      "source": "로컬세계",
+      "date": "2025",
+      "facts": "관악구 청년 전세피해 예방 리플릿 제작(피해 다발 지역 대응)",
+      "scope": "district",
+      "districts": ["관악구"]
+    },
+    {
+      "title": "서울 전세사기 피해 강서·구로·금천 전세피해지원센터 우선 개설",
+      "url": "https://www.khan.co.kr/article/202307112120005",
+      "source": "경향신문",
+      "date": "2023",
+      "facts": "전세피해지원센터가 강서·구로·금천·영등포권에 우선 개설(피해 집중 지역)",
+      "scope": "district",
+      "districts": ["강서구", "구로구", "금천구"]
+    },
+    {
+      "title": "서울 전세난에 세입자 '버티기'…전셋값 더 오르나",
+      "url": "https://www.fnnews.com/news/202607100630448560",
+      "source": "파이낸셜뉴스",
+      "date": "2026-07-10",
+      "facts": "전세 매물 부족+수요 유지로 전셋값 상승 압력, 계약갱신 지연(버티기) 심화",
+      "scope": "national"
+    },
+    {
+      "title": "전세 공급 줄어드는 서울…경기까지 번진 매물 부족",
+      "url": "https://www.mstoday.co.kr/news/articleView.html?idxno=102137",
+      "source": "MS투데이",
+      "date": "2026",
+      "facts": "서울발 전세 매물 부족이 경기로 확산",
+      "scope": "national"
+    },
+    {
+      "title": "'아파트 전세난'이라더니…서울 아파트 전월세 매물, 최근 오히려 증가세",
+      "url": "https://www.pressian.com/pages/articles/2026061910275496331",
+      "source": "프레시안",
+      "date": "2026-06-19",
+      "facts": "서울 아파트 전월세 매물 최근 증가세(전세난 신호와 상반된 완화 신호)",
+      "scope": "national",
+      "polarity_hint": "easing"
+    }
+  ],
+  "district_signals": {
+    "관악구": {"level": 1.0, "evidence": ["https://www.newsis.com/view/NISX20241017_0002923346", "https://www.kukinews.com/article/view/kuk202506270145", "https://localsegye.co.kr/news/view/1065574677539020"], "note": "서울 전세사기 피해 최다(2024-10 뉴시스), 청년 밀집·청년안심주택 피해"},
+    "강서구": {"level": 0.9, "evidence": ["https://www.khan.co.kr/article/202307112120005", "https://www.khan.co.kr/article/202304300849001"], "note": "화곡동 빌라왕 여파, 2023년 피해 최다 지역"},
+    "구로구": {"level": 0.5, "evidence": ["https://www.khan.co.kr/article/202307112120005"], "note": "전세피해지원센터 우선 개설 권역"},
+    "금천구": {"level": 0.5, "evidence": ["https://www.khan.co.kr/article/202307112120005"], "note": "전세피해지원센터 우선 개설 권역"}
+  }
+}
